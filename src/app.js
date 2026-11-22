@@ -1,24 +1,36 @@
+const { connectDB } = require('./config/database.js');
 const express = require('express');
-
 const app = express();
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
 
-const { auth } = require('./middlewares/auth');
+app.use(
+  cors({
+    origin: process.env.PORT,
+    credentials: true,
+  }),
+);
+app.use(express.json());
+app.use(cookieParser());
 
-app.use('/admin', auth);
-app.get('/admin/bye', (req, res) => {
-  res.send('bye');
-});
-app.get('/admin/hi', (req, res) => {
-  res.send('hii');
-});
-app.use('/admin/hello', (req, res) => {
-  res.send('hello');
-});
+const { authRouter } = require('./routes/auth.js');
+const { connectionRequestRouter } = require('./routes/connectionRequests.js');
+const { userRouter } = require('./routes/user.js');
 
-app.use('/', (req, res) => {
-  res.send('Hello from the server');
+app.use('/', authRouter);
+app.use('/', connectionRequestRouter);
+app.use('/', userRouter);
+app.use((req, res) => {
+  res.status(400).json({
+    message: 'Something Went Wrong',
+  });
 });
-
-app.listen(3000, () => {
-  console.log('Server is successfully listening to port 3000....');
-});
+connectDB()
+  .then(() => {
+    app.listen(7777, () => {
+      console.log('Server is successfully listening to port 7777....');
+    });
+  })
+  .catch(err => {
+    console.log('Not connected');
+  });
